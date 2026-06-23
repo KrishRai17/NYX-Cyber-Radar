@@ -111,13 +111,13 @@ To design and develop a **web-based phishing detection and analysis system** tha
 
 ### 🔍 Live Scan Result
 
-### Scan Result Safe
+### ✅ Safe URL Detection
 ![Scan Result](screenshots/scan.png)
 
-### Scan Result Warning
+### ⚠️ Suspicious URL Detection
 ![Scan Result](screenshots/warn.png)
 
-### Scan Result Threat
+### ❌ Phishing Threat Detection
 ![Threat](screenshots/threat.png)
 
 ---
