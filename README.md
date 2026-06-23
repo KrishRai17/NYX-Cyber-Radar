@@ -103,9 +103,22 @@ To design and develop a **web-based phishing detection and analysis system** tha
 
 ---
 
-### 🔍 Live Phishing Scan Result
+### Globe 3D Model
 
+![Globe](screenshots/globe.png)
+
+---
+
+### 🔍 Live Scan Result
+
+### Scan Result Safe
 ![Scan Result](screenshots/scan.png)
+
+### Scan Result Warning
+![Scan Result](screenshots/warn.png)
+
+### Scan Result Threat
+![Threat](screenshots/threat.png)
 
 ---
 
