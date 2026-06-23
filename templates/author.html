@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYX SECURE // SYSTEM ARCHITECT DOSSIER</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0203;
+            --primary-color: #ff003c;
+            --primary-glow: rgba(255, 0, 60, 0.4);
+            --primary-dim: rgba(255, 0, 60, 0.15);
+            --text-color: #e5c5c8;
+            --panel-bg: rgba(18, 4, 6, 0.75);
+            --panel-border: rgba(255, 0, 60, 0.25);
+            --terminal-font: 'Share Tech Mono', monospace;
+            --header-font: 'Orbitron', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--terminal-font);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at center, #230408 0%, #0b0203 100%);
+        }
+
+        /* Animated Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--primary-dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--primary-dim) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* CRT Overlay Filter */
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        .crt-overlay::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 0, 60, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9998;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: scanlineScroll 6s linear infinite;
+        }
+
+        @keyframes scanlineScroll {
+            0% {
+                top: -5%;
+            }
+
+            100% {
+                top: 105%;
+            }
+        }
+
+        /* Header */
+        header {
+            height: 70px;
+            border-bottom: 1px solid var(--panel-border);
+            background: rgba(15, 3, 5, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .logo-text h1 {
+            font-family: var(--header-font);
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #fff, #ff5577);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            font-family: var(--header-font);
+            font-size: 0.9rem;
+            color: rgba(229, 197, 200, 0.6);
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+            border-color: var(--panel-border);
+            background: rgba(255, 0, 60, 0.05);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            border-color: var(--primary-color);
+            background: rgba(255, 0, 60, 0.15);
+            box-shadow: 0 0 10px var(--primary-glow);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        /* Main Workspace Container */
+        .workspace {
+            flex-grow: 1;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            position: relative;
+        }
+
+        /* Dossier Card Container */
+        .dossier-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            position: relative;
+            padding: 40px;
+            width: 1000px;
+            max-width: 100%;
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            display: flex;
+            gap: 40px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .corner-bracket {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--primary-color);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .cb-tl {
+            top: -2px;
+            left: -2px;
+            border-width: 4px 0 0 4px;
+        }
+
+        .cb-tr {
+            top: -2px;
+            right: -2px;
+            border-width: 4px 4px 0 0;
+        }
+
+        .cb-bl {
+            bottom: -2px;
+            left: -2px;
+            border-width: 0 0 4px 4px;
+        }
+
+        .cb-br {
+            bottom: -2px;
+            right: -2px;
+            border-width: 0 4px 4px 0;
+        }
+
+        /* Left Side: Avatar Profile */
+        .dossier-left {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 280px;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 240px;
+            height: 280px;
+            border: 1px solid var(--panel-border);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.1);
+        }
+
+        .avatar-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-glow);
+            animation: scannerBar 3s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        @keyframes scannerBar {
+            0% {
+                top: 0%;
+            }
+
+            50% {
+                top: 100%;
+            }
+
+            100% {
+                top: 0%;
+            }
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 1px solid rgba(255, 0, 60, 0.2);
+            filter: sepia(0.2) contrast(1.1) brightness(0.9) hue-rotate(-15deg);
+        }
+
+        .status-badge {
+            width: 100%;
+            background: rgba(255, 0, 60, 0.1);
+            border: 1px solid var(--panel-border);
+            padding: 10px;
+            text-align: center;
+            font-family: var(--header-font);
+            font-weight: 800;
+            letter-spacing: 2px;
+            font-size: 0.95rem;
+            color: var(--primary-color);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 8px var(--primary-glow);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Right Side: Dossier Info */
+        .dossier-right {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .dossier-header {
+            border-bottom: 2px solid var(--panel-border);
+            padding-bottom: 15px;
+        }
+
+        .dossier-title {
+            font-family: var(--header-font);
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 5px;
+        }
+
+        .dossier-subtitle {
+            font-size: 1rem;
+            color: var(--primary-color);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* Grid stats dossier metadata */
+        .dossier-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 0, 60, 0.1);
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .dossier-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .dossier-label {
+            font-size: 0.75rem;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .dossier-value {
+            font-size: 0.95rem;
+            color: #fff;
+        }
+
+        .dossier-bio {
+            line-height: 1.6;
+            font-size: 0.95rem;
+            color: rgba(229, 197, 200, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dossier-bio p strong {
+            color: #fff;
+        }
+
+        .dossier-quote {
+            border-left: 3px solid var(--primary-color);
+            padding-left: 15px;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 0, 60, 0.03);
+            padding: 12px 15px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dossier-panel {
+                flex-direction: column;
+                align-items: center;
+                padding: 25px;
+            }
+
+            .dossier-left {
+                width: 100%;
+            }
+
+            .dossier-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Overlays -->
+    <div class="crt-overlay"></div>
+    <div class="scanline"></div>
+    <div class="grid-bg"></div>
+
+    <header>
+        <div class="header-logo">
+            <i class="fa-solid fa-compass-drafting logo-icon"></i>
+            <div class="logo-text">
+                <h1>NYX CYBER-RADAR //</h1>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <a href="/" class="nav-link"><i class="fa-solid fa-circle-nodes"></i> GRID MONITOR</a>
+            <a href="/how-it-works" class="nav-link"><i class="fa-solid fa-gears"></i> HOW IT WORKS</a>
+            <a href="/author" class="nav-link active"><i class="fa-solid fa-user-shield"></i> AUTHOR</a>
+        </nav>
+        <div class="header-status">
+            <div class="status-pill">
+                <span style="color: var(--primary-color)">DOSSIER:</span>
+                <span style="color: #fff">ARCHITECT</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="dossier-panel" id="dossierCard">
+            <!-- Corner Brackets -->
+            <div class="corner-bracket cb-tl"></div>
+            <div class="corner-bracket cb-tr"></div>
+            <div class="corner-bracket cb-bl"></div>
+            <div class="corner-bracket cb-br"></div>
+
+            <div class="dossier-left">
+                <div class="avatar-container">
+                    <!-- Corner brackets for photo -->
+                    <div class="corner-bracket cb-tl" style="border-width: 2px 0 0 2px; width: 10px; height: 10px;">
+                    </div>
+                    <div class="corner-bracket cb-tr" style="border-width: 2px 2px 0 0; width: 10px; height: 10px;">
+                    </div>
+                    <div class="corner-bracket cb-bl" style="border-width: 0 0 2px 2px; width: 10px; height: 10px;">
+                    </div>
+                    <div class="corner-bracket cb-br" style="border-width: 0 2px 2px 0; width: 10px; height: 10px;">
+                    </div>
+                    <img src="/static/krish.jpg" alt="Krish Rai" class="profile-avatar">
+                </div>
+                <div class="status-badge">
+                    <span class="status-dot"></span> STATUS: ACTIVE
+                </div>
+
+                <!-- Contact Channels Block -->
+                <div class="contact-panel"
+                    style="width: 100%; border: 1px solid var(--panel-border); background: rgba(0, 0, 0, 0.45); padding: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; border-radius: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    <div
+                        style="font-family: var(--header-font); font-weight: 800; font-size: 0.75rem; color: var(--primary-color); border-bottom: 1px solid rgba(255, 0, 60, 0.2); padding-bottom: 5px; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-address-book"></i> COMM CHANNELS
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+                        <i class="fa-brands fa-instagram"
+                            style="color: var(--primary-color); font-size: 1rem; width: 16px;"></i>
+                        <span>IG: <a href="https://instagram.com/_nep.mac" target="_blank"
+                                style="color: #fff; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.4); transition: color 0.3s;"
+                                onmouseover="this.style.color='var(--primary-color)'"
+                                onmouseout="this.style.color='#fff'">_nep.mac</a></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+                        <i class="fa-solid fa-envelope"
+                            style="color: var(--primary-color); font-size: 0.95rem; width: 16px;"></i>
+                        <span>Email: <a href="mailto:krishrai8570@gmail.com"
+                                style="color: #fff; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.4); transition: color 0.3s;"
+                                onmouseover="this.style.color='var(--primary-color)'"
+                                onmouseout="this.style.color='#fff'">krishrai8570@gmail.com</a></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+                        <i class="fa-solid fa-phone"
+                            style="color: var(--primary-color); font-size: 0.95rem; width: 16px;"></i>
+                        <span>Tel: <a href="tel:+919883000134"
+                                style="color: #fff; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.4); transition: color 0.3s;"
+                                onmouseover="this.style.color='var(--primary-color)'"
+                                onmouseout="this.style.color='#fff'">+91 98830 00134</a></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+                        <i class="fa-brands fa-linkedin"
+                            style="color: var(--primary-color); font-size: 1rem; width: 16px;"></i>
+                        <span>LinkedIn: <a href="https://www.linkedin.com/in/krish-rai-nyx" target="_blank"
+                                style="color: #fff; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.4); transition: color 0.3s; word-break: break-all;"
+                                onmouseover="this.style.color='var(--primary-color)'"
+                                onmouseout="this.style.color='#fff'">krish-rai-nyx</a></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dossier-right">
+                <div class="dossier-header">
+                    <h2 class="dossier-title">KRISH RAI</h2>
+                    <p class="dossier-subtitle">Cybersecurity & Secure Software Developer Enthusiast</p>
+                </div>
+
+                <div class="dossier-grid">
+                    <div class="dossier-item">
+                        <span class="dossier-label"><i class="fa-solid fa-graduation-cap"></i> EDUCATION</span>
+                        <span class="dossier-value">MCA (Master of Computer Applications)</span>
+                    </div>
+                    <div class="dossier-item">
+                        <span class="dossier-label"><i class="fa-solid fa-school"></i> INSTITUTION</span>
+                        <span class="dossier-value">Kristu Jayanti Deemed to be University, Bangalore</span>
+                    </div>
+                    <div class="dossier-item">
+                        <span class="dossier-label"><i class="fa-solid fa-map-location-dot"></i> ORIGIN</span>
+                        <span class="dossier-value">Siliguri, West Bengal, India</span>
+                    </div>
+                    <div class="dossier-item">
+                        <span class="dossier-label"><i class="fa-solid fa-terminal"></i> SECURITY FOCUS</span>
+                        <span class="dossier-value">Secure Coding, Web Dev Sec</span>
+                    </div>
+                </div>
+
+                <div class="dossier-bio">
+                    <p>
+                        I am currently studying in <strong>Kristu Jayanti Deemed to be University, Bangalore</strong>,
+                        pursuing my Master of Computer Applications (MCA). I am originally from <strong>Siliguri, West
+                            Bengal</strong>.
+                    </p>
+                    <p>
+                        I built this project to gain practical, hands-on knowledge in software security vectors,
+                        server-to-client geolocation mappings, and modern 3D graphics rendering. My goal is to put my
+                        academic security principles into live applications, creating clean, defensible code structures
+                        that are safe from vulnerability exploits.
+                    </p>
+                    <div class="dossier-quote">
+                        "Building secure applications is not just about writing syntax; it's about anticipating threat
+                        vectors and creating interactive feedback systems that keep users safe."
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Animate the dossier card entry
+        gsap.to("#dossierCard", {
+            duration: 0.8,
+            opacity: 1,
+            y: 0,
+            ease: "power2.out",
+            delay: 0.1
+        });
+    </script>
+</body>
+
+</html>

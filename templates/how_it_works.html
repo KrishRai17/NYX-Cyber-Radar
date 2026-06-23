@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYX SECURE // SYSTEM DIAGNOSTICS & LOGIC</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0203;
+            --primary-color: #ff003c;
+            --primary-glow: rgba(255, 0, 60, 0.4);
+            --primary-dim: rgba(255, 0, 60, 0.15);
+            --text-color: #e5c5c8;
+            --panel-bg: rgba(18, 4, 6, 0.75);
+            --panel-border: rgba(255, 0, 60, 0.25);
+            --terminal-font: 'Share Tech Mono', monospace;
+            --header-font: 'Orbitron', sans-serif;
+            --safe-color: #00ff88;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--terminal-font);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at center, #230408 0%, #0b0203 100%);
+        }
+
+        /* Animated Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--primary-dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--primary-dim) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* CRT Overlay Filter */
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        .crt-overlay::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 0, 60, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9998;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: scanlineScroll 6s linear infinite;
+        }
+
+        @keyframes scanlineScroll {
+            0% {
+                top: -5%;
+            }
+
+            100% {
+                top: 105%;
+            }
+        }
+
+        /* Header */
+        header {
+            height: 70px;
+            border-bottom: 1px solid var(--panel-border);
+            background: rgba(15, 3, 5, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .logo-text h1 {
+            font-family: var(--header-font);
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #fff, #ff5577);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            font-family: var(--header-font);
+            font-size: 0.9rem;
+            color: rgba(229, 197, 200, 0.6);
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+            border-color: var(--panel-border);
+            background: rgba(255, 0, 60, 0.05);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            border-color: var(--primary-color);
+            background: rgba(255, 0, 60, 0.15);
+            box-shadow: 0 0 10px var(--primary-glow);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        /* Workspace Grid */
+        .workspace {
+            flex-grow: 1;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            position: relative;
+        }
+
+        .content-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            position: relative;
+            padding: 40px;
+            width: 1000px;
+            max-width: 100%;
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .corner-bracket {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--primary-color);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .cb-tl {
+            top: -2px;
+            left: -2px;
+            border-width: 4px 0 0 4px;
+        }
+
+        .cb-tr {
+            top: -2px;
+            right: -2px;
+            border-width: 4px 4px 0 0;
+        }
+
+        .cb-bl {
+            bottom: -2px;
+            left: -2px;
+            border-width: 0 0 4px 4px;
+        }
+
+        .cb-br {
+            bottom: -2px;
+            right: -2px;
+            border-width: 0 4px 4px 0;
+        }
+
+        .section-header {
+            border-bottom: 2px solid var(--panel-border);
+            padding-bottom: 15px;
+        }
+
+        .section-title {
+            font-family: var(--header-font);
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 5px;
+        }
+
+        .section-subtitle {
+            font-size: 1rem;
+            color: var(--primary-color);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* Visual steps grids */
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .step-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 0, 60, 0.15);
+            border-radius: 4px;
+            padding: 25px;
+            display: flex;
+            gap: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.1);
+            transform: translateX(5px);
+        }
+
+        .step-num {
+            font-family: var(--header-font);
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            text-shadow: 0 0 8px var(--primary-glow);
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.1);
+        }
+
+        .step-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .step-title {
+            font-family: var(--header-font);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-title i {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .step-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: rgba(229, 197, 200, 0.85);
+        }
+
+        .step-badge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .step-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(229, 197, 200, 0.2);
+            color: rgba(229, 197, 200, 0.8);
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .step-badge.highlight {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(255, 0, 60, 0.05);
+        }
+
+        .bookmarklet-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #aa0022 0%, var(--primary-color) 100%);
+            border: 1px dashed rgba(255, 255, 255, 0.4);
+            color: #fff;
+            padding: 12px 24px;
+            font-family: var(--header-font);
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: grab;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 60, 0.2);
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .bookmarklet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 60, 0.4);
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .bookmarklet-btn:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Overlays -->
+    <div class="crt-overlay"></div>
+    <div class="scanline"></div>
+    <div class="grid-bg"></div>
+
+    <header>
+        <div class="header-logo">
+            <i class="fa-solid fa-compass-drafting logo-icon"></i>
+            <div class="logo-text">
+                <h1>NYX CYBER-RADAR //</h1>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <a href="/" class="nav-link"><i class="fa-solid fa-circle-nodes"></i> GRID MONITOR</a>
+            <a href="/how-it-works" class="nav-link active"><i class="fa-solid fa-gears"></i> HOW IT WORKS</a>
+            <a href="/author" class="nav-link"><i class="fa-solid fa-user-shield"></i> AUTHOR</a>
+        </nav>
+        <div class="header-status">
+            <div class="status-pill">
+                <span style="color: var(--primary-color)">SYSTEM:</span>
+                <span style="color: #fff">DOCUMENTATION</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="content-panel" id="contentCard">
+            <!-- Corner Brackets -->
+            <div class="corner-bracket cb-tl"></div>
+            <div class="corner-bracket cb-tr"></div>
+            <div class="corner-bracket cb-bl"></div>
+            <div class="corner-bracket cb-br"></div>
+
+            <div class="section-header">
+                <h2 class="section-title">HOW IT WORKS</h2>
+                <p class="section-subtitle">Phishing Detection Analysis & Visualization Logic</p>
+            </div>
+
+            <div class="step-container">
+                <!-- Step 1 -->
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <div class="step-details">
+                        <h3 class="step-title"><i class="fa-solid fa-magnifying-glass"></i> Heuristics Analysis</h3>
+                        <p class="step-text">
+                            When an endpoint is submitted, the heuristic scanner parses the target URL string for
+                            potential threat markers. It scores the risk level according to four metrics:
+                        </p>
+                        <div class="step-badge-list">
+                            <span class="step-badge highlight">HTTPS check</span>
+                            <span class="step-badge">Keyword entropy</span>
+                            <span class="step-badge">String length limit</span>
+                            <span class="step-badge">Direct IP targeting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <div class="step-details">
+                        <h3 class="step-title"><i class="fa-solid fa-globe"></i> IP-API Geolocation Trace</h3>
+                        <p class="step-text">
+                            The server resolves the target domain name into its underlying IP address using DNS lookup.
+                            It queries the IP-API database to pinpoint the server's geographical coordinates (latitude
+                            and longitude), registration country, and managing Organization/ISP.
+                        </p>
+                        <div class="step-badge-list">
+                            <span class="step-badge">DNS Resolution</span>
+                            <span class="step-badge highlight">IP Mapping</span>
+                            <span class="step-badge">ISP Telemetry</span>
+                            <span class="step-badge">Lat / Lon Coordinates</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="step-card">
+                    <div class="step-num">03</div>
+                    <div class="step-details">
+                        <h3 class="step-title"><i class="fa-solid fa-route"></i> 3D Cartesian Projection</h3>
+                        <p class="step-text">
+                            The latitude and longitude coordinates are translated mathematically to a 3D space vector
+                            using trigonometric coordinate transformation. The frontend draws an animated cyber-globe
+                            representing earth, calculates bezier arcs from the client location to the target node, and
+                            sweeps a laser comet particle along the connection path to represent connection data flow.
+                        </p>
+                        <div class="step-badge-list">
+                            <span class="step-badge highlight">Spherical coordinates</span>
+                            <span class="step-badge">Bezier curves</span>
+                            <span class="step-badge">Interactive orbit</span>
+                            <span class="step-badge">Laser beacons</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 / Bookmarklet -->
+                <div class="step-card">
+                    <div class="step-num">04</div>
+                    <div class="step-details">
+                        <h3 class="step-title"><i class="fa-solid fa-bookmark"></i> Instant Bookmarklet Scan</h3>
+                        <p class="step-text">
+                            Drag the secure bookmarklet button below directly to your browser's Bookmarks bar. While
+                            browsing any external web page, click this bookmark to immediately redirect and initiate an
+                            automated cyber-threat analysis on the current URL.
+                        </p>
+                        <div>
+                            <a href="javascript:(function(){var url=encodeURIComponent(window.location.href);window.open('{{ request.host_url }}?scan='+url,'_blank');})();"
+                                class="bookmarklet-btn" title="Drag to bookmarks bar" draggable="true"
+                                onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar to use it!');">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> NYX SCAN ENDPOINT
+                            </a>
+                        </div>
+                        <div class="step-badge-list" style="margin-top: 10px;">
+                            <span class="step-badge highlight">Drag & Drop</span>
+                            <span class="step-badge">One-click scan</span>
+                            <span class="step-badge">URL Query pass</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Animate the main card entry
+        gsap.to("#contentCard", {
+            duration: 0.8,
+            opacity: 1,
+            y: 0,
+            ease: "power2.out",
+            delay: 0.1
+        });
+    </script>
+</body>
+
+</html>

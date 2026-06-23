@@ -1,0 +1,2793 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYX SECURE // PHISHING DETECTION SYSTEM</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- GSAP for UI animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Three.js for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- html2pdf.js for themed PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0203;
+            --primary-color: #ff003c;
+            --primary-glow: rgba(255, 0, 60, 0.4);
+            --primary-dim: rgba(255, 0, 60, 0.15);
+            --safe-color: #00ff88;
+            --safe-glow: rgba(0, 255, 136, 0.4);
+            --warn-color: #ffaa00;
+            --warn-glow: rgba(255, 170, 0, 0.4);
+            --danger-color: #ff003c;
+            --danger-glow: rgba(255, 0, 60, 0.5);
+            --text-color: #e5c5c8;
+            --panel-bg: rgba(18, 4, 6, 0.65);
+            --panel-border: rgba(255, 0, 60, 0.25);
+            --terminal-font: 'Share Tech Mono', monospace;
+            --header-font: 'Orbitron', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--terminal-font);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            background-image: radial-gradient(circle at center, #230408 0%, #0b0203 100%);
+        }
+
+        /* Animated Grid Background */
+        .grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--primary-dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--primary-dim) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center;
+            opacity: 0.25;
+            z-index: 1;
+            pointer-events: none;
+            transform: perspective(500px) rotateX(20deg) scale(1.2);
+            transform-origin: top;
+            animation: gridScroll 30s linear infinite;
+        }
+
+        @keyframes gridScroll {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 0 500px;
+            }
+        }
+
+        /* CRT Overlay Filter */
+        .crt-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        .crt-overlay::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
+            pointer-events: none;
+        }
+
+        /* Scanline scan animation */
+        .scanline {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 0, 60, 0.1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 9998;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: scanlineScroll 6s linear infinite;
+        }
+
+        @keyframes scanlineScroll {
+            0% {
+                top: -5%;
+            }
+
+            100% {
+                top: 105%;
+            }
+        }
+
+        /* Glitch style text */
+        .glitch-text {
+            font-family: var(--header-font);
+            position: relative;
+            color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow);
+            letter-spacing: 2px;
+        }
+
+        /* -------------------------------------------------------------
+           BOOT SEQUENCE LAYOUT
+        ------------------------------------------------------------- */
+        #boot-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #050001;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        #boot-matrix-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.12;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .boot-brand-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            padding: 40px 60px;
+            background: rgba(10, 2, 3, 0.65);
+            border: 1px solid rgba(255, 0, 60, 0.15);
+            box-shadow: 0 0 40px rgba(255, 0, 60, 0.1);
+        }
+
+        /* Corner Brackets */
+        .corner-bracket {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--primary-color);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .cb-tl {
+            top: -2px;
+            left: -2px;
+            border-width: 3px 0 0 3px;
+        }
+
+        .cb-tr {
+            top: -2px;
+            right: -2px;
+            border-width: 3px 3px 0 0;
+        }
+
+        .cb-bl {
+            bottom: -2px;
+            left: -2px;
+            border-width: 0 0 3px 3px;
+        }
+
+        .cb-br {
+            bottom: -2px;
+            right: -2px;
+            border-width: 0 3px 3px 0;
+        }
+
+        .boot-progress {
+            margin-top: 20px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .boot-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .enter-prompt {
+            margin-top: 20px;
+            font-family: var(--header-font);
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: none;
+            letter-spacing: 3px;
+            text-align: center;
+            font-weight: bold;
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                text-shadow: 0 0 2px var(--primary-glow);
+            }
+
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 12px var(--primary-glow);
+            }
+        }
+
+        /* -------------------------------------------------------------
+           MAIN DASHBOARD LAYOUT
+        ------------------------------------------------------------- */
+        .app-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            /* Animated in via GSAP */
+        }
+
+        /* Main Header */
+        header {
+            height: 70px;
+            border-bottom: 1px solid var(--panel-border);
+            background: rgba(15, 3, 5, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 10;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            font-family: var(--header-font);
+            font-size: 0.9rem;
+            color: rgba(229, 197, 200, 0.6);
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+            border-color: var(--panel-border);
+            background: rgba(255, 0, 60, 0.05);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            border-color: var(--primary-color);
+            background: rgba(255, 0, 60, 0.15);
+            box-shadow: 0 0 10px var(--primary-glow);
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            animation: rotateRadar 4s linear infinite;
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        @keyframes rotateRadar {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .logo-text h1 {
+            font-family: var(--header-font);
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #fff, #ff5577);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.85rem;
+            font-family: var(--header-font);
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 0, 60, 0.08);
+            border: 1px solid var(--panel-border);
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--primary-glow);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Dashboard Workspace */
+        .workspace {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 70px);
+            position: relative;
+        }
+
+        /* Left Console Column */
+        .console-column {
+            width: 55%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+            border-right: 1px solid var(--panel-border);
+            background: rgba(8, 2, 3, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 5;
+        }
+
+        .console-column::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-column::-webkit-scrollbar-thumb {
+            background-color: var(--panel-border);
+        }
+
+        /* Glassmorphic Panel Container */
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            position: relative;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 60, 0.4), transparent);
+        }
+
+        .panel-title {
+            font-family: var(--header-font);
+            font-size: 0.95rem;
+            color: var(--primary-color);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 8px;
+        }
+
+        /* Threat Scanner Form styling */
+        .scanner-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255, 0, 60, 0.4);
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .input-prompt {
+            padding-left: 15px;
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.1rem;
+            user-select: none;
+            letter-spacing: 1px;
+        }
+
+        .url-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 16px 15px;
+            color: #fff;
+            font-family: var(--terminal-font);
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+        }
+
+        .url-input::placeholder {
+            color: rgba(229, 197, 200, 0.35);
+        }
+
+        .scan-btn {
+            background: linear-gradient(135deg, #aa0022 0%, var(--primary-color) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 15px 30px;
+            font-family: var(--header-font);
+            font-weight: 800;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 60, 0.2);
+        }
+
+        .scan-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 60, 0.4);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .scan-btn:active {
+            transform: translateY(0);
+        }
+
+        .scan-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .scan-btn:hover i {
+            transform: translateX(4px);
+        }
+
+        /* Interactive Telemetry Log Box */
+        .terminal-log-panel {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
+        }
+
+        .terminal-log-screen {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 0, 60, 0.15);
+            border-radius: 4px;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: rgba(229, 197, 200, 0.85);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-family: var(--terminal-font);
+        }
+
+        .terminal-log-screen::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .terminal-log-screen::-webkit-scrollbar-thumb {
+            background-color: var(--panel-border);
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(5px);
+            animation: printLog 0.3s forwards ease-out;
+        }
+
+        @keyframes printLog {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .log-time {
+            color: var(--primary-color);
+            user-select: none;
+            font-weight: bold;
+        }
+
+        .log-text {
+            word-break: break-all;
+        }
+
+        .log-success {
+            color: var(--safe-color);
+        }
+
+        .log-warning {
+            color: var(--warn-color);
+        }
+
+        .log-error {
+            color: var(--primary-color);
+            text-shadow: 0 0 4px var(--primary-glow);
+        }
+
+        /* Report Evaluation Card Styling */
+        .report-panel {
+            display: none;
+            /* Controlled via JS and GSAP */
+            transform: scale(0.95);
+            opacity: 0;
+        }
+
+        .report-card {
+            border-radius: 4px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.5s ease;
+        }
+
+        .report-card-danger {
+            background: rgba(255, 0, 60, 0.07);
+            border: 1px solid rgba(255, 0, 60, 0.5);
+            box-shadow: inset 0 0 20px rgba(255, 0, 60, 0.1), 0 0 25px rgba(255, 0, 60, 0.15);
+        }
+
+        .report-card-warn {
+            background: rgba(255, 170, 0, 0.05);
+            border: 1px solid rgba(255, 170, 0, 0.4);
+            box-shadow: inset 0 0 20px rgba(255, 170, 0, 0.05), 0 0 25px rgba(255, 170, 0, 0.1);
+        }
+
+        .report-card-safe {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.05), 0 0 25px rgba(0, 255, 136, 0.15);
+        }
+
+        .report-headline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--header-font);
+            font-weight: 900;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+
+        .headline-danger {
+            color: #ff3355;
+            text-shadow: 0 0 10px rgba(255, 51, 85, 0.4);
+        }
+
+        .headline-warn {
+            color: var(--warn-color);
+            text-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+        }
+
+        .headline-safe {
+            color: var(--safe-color);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .report-details-title {
+            font-family: var(--header-font);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: rgba(229, 197, 200, 0.6);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .reasons-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reasons-list li {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .li-danger {
+            background: rgba(255, 0, 60, 0.08);
+            border-color: rgba(255, 0, 60, 0.15) !important;
+            color: #ff99aa;
+        }
+
+        .li-warn {
+            background: rgba(255, 170, 0, 0.08);
+            border-color: rgba(255, 170, 0, 0.15) !important;
+            color: #ffddaa;
+        }
+
+        .li-safe {
+            background: rgba(0, 255, 136, 0.08);
+            border-color: rgba(0, 255, 136, 0.15) !important;
+            color: #aaffdd;
+        }
+
+        /* 3D Visualization Column */
+        .visualization-column {
+            width: 45%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            background: rgba(4, 1, 2, 0.2);
+        }
+
+        #three-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .telemetry-overlay {
+            position: relative;
+            z-index: 3;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .telemetry-box {
+            background: rgba(18, 4, 6, 0.7);
+            border: 1px solid rgba(255, 0, 60, 0.15);
+            padding: 10px 15px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-radius: 2px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .telemetry-box span:first-child {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .telemetry-box span:last-child {
+            font-family: var(--terminal-font);
+            color: #fff;
+        }
+
+        /* Live Radar Sweep indicator */
+        .radar-widget {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 0, 60, 0.25);
+            background: radial-gradient(circle, transparent 40%, rgba(255, 0, 60, 0.05) 100%);
+            z-index: 3;
+            pointer-events: none;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.05);
+        }
+
+        .radar-sweep {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, var(--primary-color) 0deg, transparent 90deg, transparent 360deg);
+            border-radius: 50%;
+            opacity: 0.35;
+            transform-origin: center;
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .radar-crosshair-h {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 0, 60, 0.2);
+        }
+
+        .radar-crosshair-v {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: rgba(255, 0, 60, 0.2);
+        }
+
+        /* Responsive Layout fixes */
+        @media (max-width: 1024px) {
+            .workspace {
+                flex-direction: column-reverse;
+                overflow-y: auto;
+            }
+
+            .console-column {
+                width: 100%;
+                border-right: none;
+                border-top: 1px solid var(--panel-border);
+                height: auto;
+                overflow: visible;
+            }
+
+            .visualization-column {
+                width: 100%;
+                height: 400px;
+            }
+
+            body {
+                overflow: auto;
+            }
+        }
+
+        /* Profile & Diagnostics styling */
+        .profile-card {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-glow);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .profile-bio {
+            flex-grow: 1;
+        }
+
+        .profile-name {
+            font-family: var(--header-font);
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .profile-title {
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .profile-text {
+            font-size: 0.85rem;
+            color: rgba(229, 197, 200, 0.8);
+            line-height: 1.4;
+        }
+
+        .diagnostics-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .diag-step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .diag-step-num {
+            font-family: var(--header-font);
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: var(--primary-color);
+            border: 1px solid var(--panel-border);
+            padding: 4px 8px;
+            border-radius: 2px;
+            background: rgba(255, 0, 60, 0.05);
+            text-shadow: 0 0 5px var(--primary-glow);
+            flex-shrink: 0;
+        }
+
+        .diag-step-desc {
+            font-size: 0.85rem;
+            color: rgba(229, 197, 200, 0.8);
+            line-height: 1.4;
+        }
+
+        .diag-step-desc strong {
+            color: #fff;
+            display: block;
+            margin-bottom: 2px;
+            font-family: var(--header-font);
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Input deck and buttons */
+        .button-deck {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .clear-btn {
+            background: rgba(20, 20, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(229, 197, 200, 0.75);
+            padding: 15px 25px;
+            font-family: var(--header-font);
+            font-weight: 800;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        /* 3D Viewport Zoom Overlay */
+        .zoom-controls {
+            position: absolute;
+            bottom: 145px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 3;
+        }
+
+        .zoom-btn {
+            background: rgba(18, 4, 6, 0.8);
+            border: 1px solid rgba(255, 0, 60, 0.25);
+            color: var(--primary-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .zoom-btn:hover {
+            box-shadow: 0 0 10px var(--primary-glow);
+            border-color: var(--primary-color);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* High-tech Export Button styled dynamically by parent */
+        .export-btn {
+            background: rgba(255, 0, 60, 0.1);
+            border: 1px solid var(--primary-color);
+            color: #e5c5c8;
+            padding: 10px 18px;
+            font-family: var(--header-font);
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .report-card-safe .export-btn {
+            border-color: var(--safe-color);
+            background: rgba(0, 255, 136, 0.08);
+            color: #aaffdd;
+        }
+
+        .report-card-safe .export-btn:hover {
+            background: var(--safe-color);
+            box-shadow: 0 0 15px var(--safe-glow);
+            color: #050001;
+            transform: translateY(-2px);
+        }
+
+        .report-card-warn .export-btn {
+            border-color: var(--warn-color);
+            background: rgba(255, 170, 0, 0.08);
+            color: #ffddaa;
+        }
+
+        .report-card-warn .export-btn:hover {
+            background: var(--warn-color);
+            box-shadow: 0 0 15px var(--warn-glow);
+            color: #050001;
+            transform: translateY(-2px);
+        }
+
+        .report-card-danger .export-btn {
+            border-color: var(--primary-color);
+            background: rgba(255, 0, 60, 0.08);
+            color: #ff99aa;
+        }
+
+        .report-card-danger .export-btn:hover {
+            background: var(--primary-color);
+            box-shadow: 0 0 15px var(--primary-glow);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* History database entries */
+        .history-entry {
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 0, 60, 0.15);
+            padding: 10px 14px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .history-entry:hover {
+            background: rgba(255, 0, 60, 0.06) !important;
+            border-color: var(--primary-color) !important;
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- CRT Visual Overlays -->
+    <div class="crt-overlay"></div>
+    <div class="scanline"></div>
+
+    <!-- -----------------------------------------------------------------
+         BOOT LOADING SCREEN SCREEN OVERLAY
+    ------------------------------------------------------------------ -->
+    <section id="boot-screen">
+        <canvas id="boot-matrix-canvas"></canvas>
+        <div class="boot-brand-box">
+            <!-- Corner Brackets -->
+            <div class="corner-bracket cb-tl"></div>
+            <div class="corner-bracket cb-tr"></div>
+            <div class="corner-bracket cb-bl"></div>
+            <div class="corner-bracket cb-br"></div>
+
+            <h1 class="glitch-text"
+                style="font-size: 3.2rem; margin-bottom: 10px; font-weight: 900; letter-spacing: 3px;">NYX CYBER-RADAR
+            </h1>
+            <p
+                style="font-family: var(--header-font); font-size: 1.05rem; color: var(--primary-color); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 35px; text-shadow: 0 0 8px var(--primary-glow);">
+                Phishing Detection Tool</p>
+
+            <div class="boot-progress" style="width: 320px; margin-top: 10px;">
+                <div class="boot-progress-bar" id="boot-progress-bar"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------
+         MAIN DASHBOARD LAYOUT
+    ------------------------------------------------------------------ -->
+    <div class="app-wrapper" id="app-wrapper">
+        <header>
+            <div class="header-logo">
+                <i class="fa-solid fa-compass-drafting logo-icon"></i>
+                <div class="logo-text">
+                    <h1>NYX CYBER-RADAR //</h1>
+                </div>
+            </div>
+
+            <nav class="header-nav">
+                <a href="/" class="nav-link active"><i class="fa-solid fa-circle-nodes"></i> GRID MONITOR</a>
+                <a href="/how-it-works" class="nav-link"><i class="fa-solid fa-gears"></i> HOW IT WORKS</a>
+                <a href="/author" class="nav-link"><i class="fa-solid fa-user-shield"></i> AUTHOR</a>
+            </nav>
+
+            <div class="header-status">
+                <div class="status-pill">
+                    <span style="color: var(--primary-color)">ENGINE:</span>
+                    <span style="color: #fff">HEURISTIC v3.2</span>
+                </div>
+                <div class="status-pill">
+                    <div class="status-dot"></div>
+                    <span style="color: var(--primary-color)">GRID STATE:</span>
+                    <span style="color: #fff">ONLINE</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="workspace">
+            <!-- Corner Brackets on Workspace bounds -->
+            <div class="corner-bracket cb-tl" style="z-index: 8;"></div>
+            <div class="corner-bracket cb-tr" style="z-index: 8;"></div>
+
+            <!-- Dashboard left scanner panel -->
+            <section class="console-column">
+
+                <div class="glass-panel">
+                    <div class="corner-bracket cb-tl"></div>
+                    <div class="corner-bracket cb-tr"></div>
+                    <div class="corner-bracket cb-bl"></div>
+                    <div class="corner-bracket cb-br"></div>
+
+                    <h2 class="panel-title"><i class="fa-solid fa-bullseye"></i> Target Acquisition Deck</h2>
+
+                    <form class="scanner-form" id="scanForm" onsubmit="executeUrlScan(event)">
+                        <div class="input-group">
+                            <span class="input-prompt">[TARGET_URL_REQ]></span>
+                            <input type="text" id="targetUrlInput" class="url-input"
+                                placeholder="Enter suspicious endpoint to scan..." required autocomplete="off">
+                        </div>
+                        <div class="button-deck">
+                            <button type="submit" class="scan-btn" id="submitBtn" style="flex-grow: 3;">
+                                <i class="fa-solid fa-crosshairs"></i> SCAN TARGET ENDPOINT
+                            </button>
+                            <button type="button" class="clear-btn" onclick="clearConsole()" style="flex-grow: 1;">
+                                <i class="fa-solid fa-trash-can"></i> RESET
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Threat Evaluation Report Card -->
+                <div class="glass-panel report-panel" id="reportPanel">
+                    <div class="corner-bracket cb-tl"></div>
+                    <div class="corner-bracket cb-tr"></div>
+                    <div class="corner-bracket cb-bl"></div>
+                    <div class="corner-bracket cb-br"></div>
+
+                    <h2 class="panel-title"><i class="fa-solid fa-shield-halved"></i> Threat Classification Report</h2>
+
+                    <div class="report-card" id="reportCard">
+                        <div class="report-headline" id="reportHeadline">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <div>
+                            <div class="report-details-title">Risk Telemetry Indicators</div>
+                            <ul class="reasons-list" id="reasonsList">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+
+                        <!-- Target Security Integrity Indicators -->
+                        <div style="margin-top: 15px;">
+                            <div class="report-details-title">Target Security Integrity</div>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px;">
+                                <div class="telemetry-box"
+                                    style="text-align: center; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); padding: 8px;">
+                                    <span style="font-size: 0.65rem; color: var(--primary-color);">SSL CERT</span>
+                                    <span id="telemetrySslState"
+                                        style="font-weight: bold; color: rgba(255,255,255,0.4); font-size: 0.8rem;">STANDBY</span>
+                                </div>
+                                <div class="telemetry-box"
+                                    style="text-align: center; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); padding: 8px;">
+                                    <span style="font-size: 0.65rem; color: var(--primary-color);">HSTS DEFENSE</span>
+                                    <span id="telemetryHstsState"
+                                        style="font-weight: bold; color: rgba(255,255,255,0.4); font-size: 0.8rem;">STANDBY</span>
+                                </div>
+                                <div class="telemetry-box"
+                                    style="text-align: center; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); padding: 8px;">
+                                    <span style="font-size: 0.65rem; color: var(--primary-color);">CSP DEFENSE</span>
+                                    <span id="telemetryCspState"
+                                        style="font-weight: bold; color: rgba(255,255,255,0.4); font-size: 0.8rem;">STANDBY</span>
+                                </div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 4px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.05); font-family: var(--terminal-font);">
+                                <span style="color: rgba(229,197,200,0.7);">Domain Creation Age:</span>
+                                <span id="telemetryDomainAge" style="color: #fff; font-weight: bold;">STANDBY</span>
+                            </div>
+                        </div>
+
+                        <!-- EXPORT DOSSIER BUTTONS -->
+                        <div
+                            style="margin-top: 20px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+                            <span class="report-details-title" style="margin-bottom: 0;">Export Format:</span>
+                            <button type="button" class="export-btn" onclick="exportDossier('txt')">
+                                <i class="fa-solid fa-file-lines"></i> Plain TXT
+                            </button>
+                            <button type="button" class="export-btn" onclick="exportDossier('pdf')">
+                                <i class="fa-solid fa-file-pdf"></i> Themed PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Console Log Console -->
+                <div class="glass-panel terminal-log-panel">
+                    <div class="corner-bracket cb-tl"></div>
+                    <div class="corner-bracket cb-tr"></div>
+                    <div class="corner-bracket cb-bl"></div>
+                    <div class="corner-bracket cb-br"></div>
+
+                    <h2 class="panel-title"><i class="fa-solid fa-terminal"></i> Scanning Telemetry Log</h2>
+
+                    <div class="terminal-log-screen" id="logConsole">
+                        <div class="log-entry">
+                            <span class="log-time">[00:00:00]</span>
+                            <span class="log-text">SYSTEM STANDBY. READY FOR TARGET URL VECTOR.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secure Session Logs Registry -->
+                <div class="glass-panel history-panel" id="historyPanel" style="margin-top: 10px;">
+                    <div class="corner-bracket cb-tl"></div>
+                    <div class="corner-bracket cb-tr"></div>
+                    <div class="corner-bracket cb-bl"></div>
+                    <div class="corner-bracket cb-br"></div>
+
+                    <h2 class="panel-title"><i class="fa-solid fa-database"></i> Secure Session Logs Registry</h2>
+
+                    <div id="historyList"
+                        style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-family: var(--terminal-font); font-size: 0.9rem;">
+                        <div
+                            style="color: rgba(229, 197, 200, 0.4); text-align: center; padding: 15px 0; font-style: italic;">
+                            No recorded sessions in registry.
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Right 3D Viewport Column -->
+            <section class="visualization-column">
+                <div class="grid-bg"></div>
+
+                <!-- Three.js Container -->
+                <div id="three-container"></div>
+
+                <!-- Telemetry overlay HUD -->
+                <div class="telemetry-overlay">
+                    <div class="telemetry-row">
+                        <div class="telemetry-box">
+                            <span>TARGET VECTOR</span>
+                            <span id="hudTargetLocation">STANDBY</span>
+                        </div>
+                        <div class="telemetry-box">
+                            <span>IP ADDRESS</span>
+                            <span id="hudTargetIp">0.0.0.0</span>
+                        </div>
+                    </div>
+
+                    <div class="telemetry-row">
+                        <div class="telemetry-box">
+                            <span>RESOLVED ORG</span>
+                            <span id="hudTargetOrg">STANDBY</span>
+                        </div>
+                        <div class="telemetry-box">
+                            <span>THREAT SCORE</span>
+                            <span id="hudThreatSigma" style="font-weight: bold; color: var(--safe-color);">0.00
+                                (NOMINAL)</span>
+                        </div>
+                    </div>
+
+                    <div class="telemetry-row">
+                        <div class="telemetry-box">
+                            <span>NODE DISTANCE</span>
+                            <span id="hudNodeDistance">0.00 KM</span>
+                        </div>
+                        <div class="telemetry-box">
+                            <span>TRANSMISSION DELAY</span>
+                            <span id="hudTransmissionDelay">0.00 MS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar Sweep Widget -->
+                <div class="radar-widget">
+                    <div class="radar-sweep"></div>
+                    <div class="radar-crosshair-h"></div>
+                    <div class="radar-crosshair-v"></div>
+                </div>
+
+                <!-- Zoom HUD Overlay -->
+                <div class="zoom-controls">
+                    <button type="button" class="zoom-btn" onclick="zoomThree(1)" title="Zoom In"><i
+                            class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button type="button" class="zoom-btn" onclick="zoomThree(-1)" title="Zoom Out"><i
+                            class="fa-solid fa-magnifying-glass-minus"></i></button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- -----------------------------------------------------------------
+         CRITICAL SYSTEM SCRIPTS
+    ------------------------------------------------------------------ -->
+    <script>
+        /* =================================================================
+           1. MATRIX DIGITAL RAIN (Boot Screen)
+        ==================================================================== */
+        const matrixCanvas = document.getElementById("boot-matrix-canvas");
+        const ctx = matrixCanvas.getContext("2d");
+
+        function resizeMatrixCanvas() {
+            matrixCanvas.width = window.innerWidth;
+            matrixCanvas.height = window.innerHeight;
+        }
+        resizeMatrixCanvas();
+        window.addEventListener('resize', resizeMatrixCanvas);
+
+        const matrixChars = "0101010101ABCDEF/*-%$#@!+[]{}";
+        const matrixFontSize = 14;
+        let matrixColumns = matrixCanvas.width / matrixFontSize;
+        let matrixDrops = Array(Math.floor(matrixColumns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(11, 2, 3, 0.08)";
+            ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+            ctx.fillStyle = "#ff003c";
+            ctx.font = matrixFontSize + "px monospace";
+
+            for (let i = 0; i < matrixDrops.length; i++) {
+                const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                ctx.fillText(char, i * matrixFontSize, matrixDrops[i] * matrixFontSize);
+
+                if (matrixDrops[i] * matrixFontSize > matrixCanvas.height && Math.random() > 0.985) {
+                    matrixDrops[i] = 0;
+                }
+                matrixDrops[i]++;
+            }
+        }
+        let matrixInterval = setInterval(drawMatrix, 35);
+
+        /* =================================================================
+           2. AUTOMATIC LOADING SCREEN TRANSITION
+        ==================================================================== */
+        const bootProgressBar = document.getElementById("boot-progress-bar");
+
+        setTimeout(() => {
+            gsap.to(bootProgressBar, {
+                width: "100%",
+                duration: 2.2,
+                ease: "power1.inOut",
+                onComplete: () => {
+                    clearInterval(matrixInterval);
+
+                    // Fade out boot screen
+                    gsap.to("#boot-screen", {
+                        duration: 0.8,
+                        opacity: 0,
+                        y: -80,
+                        ease: "power3.inOut",
+                        onComplete: () => {
+                            document.getElementById("boot-screen").style.display = "none";
+                        }
+                    });
+
+                    // Fade in main application dashboard
+                    gsap.to("#app-wrapper", {
+                        duration: 1,
+                        opacity: 1,
+                        ease: "power2.out",
+                        onComplete: () => {
+                            requestUserLocation();
+                            checkAutoScan();
+                            loadHistory();
+                        }
+                    });
+                }
+            });
+        }, 300);
+
+        /* =================================================================
+           3. THREE.JS 3D GEOLOCATION ATTACK MAP
+        ==================================================================== */
+        const threeContainer = document.getElementById("three-container");
+        let scene, camera, renderer, cyberGlobe, outerGlobePoints, laserScanningPlane;
+
+        let targetCoreColor = 0xff003c;
+        let baseRotationSpeed = 0.008;
+        let currentRotationSpeed = 0.008;
+
+        // Interaction Variables
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let dragVelocity = { x: 0, y: 0 };
+
+        // Geolocation Map Variables
+        let activeArc = null;
+        let activeComet = null;
+        let cometCurve = null;
+        let cometProgress = 0;
+        let activeBeacons = [];
+
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+
+            return new THREE.Vector3(
+                -radius * Math.cos(theta) * Math.sin(phi),
+                radius * Math.cos(phi),
+                radius * Math.sin(theta) * Math.sin(phi)
+            );
+        }
+
+        function createBeacon(position, color, scaleFactor = 1.0, isTarget = false) {
+            const group = new THREE.Group();
+
+            const dotGeo = new THREE.SphereGeometry(isTarget ? 0.06 : 0.04, 8, 8);
+            const dotMat = new THREE.MeshBasicMaterial({ color: color });
+            const dot = new THREE.Mesh(dotGeo, dotMat);
+            group.add(dot);
+
+            const ringGeo = new THREE.RingGeometry(0.02, 0.15, 16);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: color,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.6
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.lookAt(position);
+            group.add(ring);
+
+            group.position.copy(position);
+            cyberGlobe.add(group);
+
+            activeBeacons.push({
+                group: group,
+                ring: ring,
+                scale: scaleFactor,
+                maxScale: isTarget ? 3.0 : 2.0,
+                isPersistent: false
+            });
+            return group;
+        }
+
+        function clearScanBeacons() {
+            if (activeArc) {
+                cyberGlobe.remove(activeArc);
+                activeArc.geometry.dispose();
+                activeArc.material.dispose();
+                activeArc = null;
+            }
+            if (activeComet) {
+                cyberGlobe.remove(activeComet);
+                activeComet.geometry.dispose();
+                activeComet.material.dispose();
+                activeComet = null;
+            }
+            // Remove target & client beacons from globe and reset list
+            activeBeacons.forEach(b => {
+                cyberGlobe.remove(b.group);
+            });
+            activeBeacons = [];
+            cometCurve = null;
+            cometProgress = 0;
+        }
+
+        function drawAttackArc(clientLat, clientLon, targetLat, targetLon, targetColor) {
+            clearScanBeacons();
+
+            const start = latLonToVector3(clientLat, clientLon, 2.2);
+            const end = latLonToVector3(targetLat, targetLon, 2.2);
+
+            // Create pulsing target beacons
+            createBeacon(start, 0x00ffcc, 1.0, false); // Cyan client
+            createBeacon(end, targetColor, 1.5, true);  // Target color
+
+            // Bezier curve height proportional to path distance
+            const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+            const dist = start.distanceTo(end);
+            mid.normalize().multiplyScalar(2.2 + Math.max(dist * 0.45, 0.4));
+
+            cometCurve = new THREE.QuadraticBezierCurve3(start, mid, end);
+            const points = cometCurve.getPoints(50);
+            const curveGeo = new THREE.BufferGeometry().setFromPoints(points);
+
+            const curveMat = new THREE.LineBasicMaterial({
+                color: targetColor,
+                transparent: true,
+                opacity: 0.75,
+                blending: THREE.AdditiveBlending
+            });
+            activeArc = new THREE.Line(curveGeo, curveMat);
+            cyberGlobe.add(activeArc);
+
+            // Comet particle
+            const cometGeo = new THREE.SphereGeometry(0.06, 8, 8);
+            const cometMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.95
+            });
+            activeComet = new THREE.Mesh(cometGeo, cometMat);
+            cyberGlobe.add(activeComet);
+
+            cometProgress = 0;
+        }
+
+        function initThreeJS() {
+            const width = threeContainer.clientWidth;
+            const height = threeContainer.clientHeight;
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+            camera.position.z = 7;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            threeContainer.appendChild(renderer.domElement);
+
+            // 1. Grid Globe (Main Group)
+            cyberGlobe = new THREE.Group();
+            scene.add(cyberGlobe);
+
+            // Realistic Earth Texture showing Countries and Oceans
+            const textureLoader = new THREE.TextureLoader();
+            const landTex = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+
+            const landGeo = new THREE.SphereGeometry(2.18, 40, 40);
+            const landMat = new THREE.MeshBasicMaterial({
+                map: landTex,
+                transparent: false
+            });
+
+            landTex.wrapS = THREE.RepeatWrapping;
+            landTex.wrapT = THREE.ClampToEdgeWrapping;
+
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+            landMesh.name = "earthBase"; // unique name to identify base earth map
+            cyberGlobe.add(landMesh);
+
+            // Base Wireframe sphere grid overlay
+            const globeGeo = new THREE.SphereGeometry(2.2, 24, 18);
+            const globeMat = new THREE.MeshBasicMaterial({
+                color: targetCoreColor,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.12,
+                blending: THREE.AdditiveBlending
+            });
+            const globeMesh = new THREE.Mesh(globeGeo, globeMat);
+            cyberGlobe.add(globeMesh);
+
+            // Equatorial line
+            const equatorGeo = new THREE.RingGeometry(2.205, 2.22, 64);
+            const equatorMat = new THREE.MeshBasicMaterial({
+                color: targetCoreColor,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.25
+            });
+            const equator = new THREE.Mesh(equatorGeo, equatorMat);
+            equator.rotation.x = Math.PI / 2;
+            cyberGlobe.add(equator);
+
+            // Persistent node coordinates representing major cities on the globe
+            const networkCities = [
+                { lat: 40.71, lon: -74.00 }, // New York
+                { lat: 51.50, lon: -0.12 },  // London
+                { lat: 35.67, lon: 139.65 }, // Tokyo
+                { lat: -33.86, lon: 151.20 },// Sydney
+                { lat: 19.07, lon: 72.87 },  // Mumbai
+                { lat: -23.55, lon: -46.63 },// Sao Paulo
+                { lat: -33.92, lon: 18.42 }, // Cape Town
+                { lat: 55.75, lon: 37.61 }   // Moscow
+            ];
+
+            networkCities.forEach(city => {
+                const pos = latLonToVector3(city.lat, city.lon, 2.2);
+                const dotGeo = new THREE.SphereGeometry(0.025, 6, 6);
+                const dotMat = new THREE.MeshBasicMaterial({ color: targetCoreColor, transparent: true, opacity: 0.35 });
+                const dot = new THREE.Mesh(dotGeo, dotMat);
+                dot.position.copy(pos);
+                cyberGlobe.add(dot);
+            });
+
+            // 2. Outer Particle Cloud
+            const outerGeo = new THREE.IcosahedronGeometry(2.8, 2);
+            const particleCount = outerGeo.attributes.position.count;
+            const particleGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const posAttribute = outerGeo.attributes.position;
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = posAttribute.getX(i);
+                positions[i * 3 + 1] = posAttribute.getY(i);
+                positions[i * 3 + 2] = posAttribute.getZ(i);
+            }
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const particleMat = new THREE.PointsMaterial({
+                color: targetCoreColor,
+                size: 0.05,
+                transparent: true,
+                opacity: 0.35,
+                blending: THREE.AdditiveBlending
+            });
+            outerGlobePoints = new THREE.Points(particleGeo, particleMat);
+            scene.add(outerGlobePoints);
+
+            // 3. Laser Scanning Plane
+            const planeGeo = new THREE.CylinderGeometry(2.35, 2.35, 0.03, 32, 1, true);
+            const planeMat = new THREE.MeshBasicMaterial({
+                color: targetCoreColor,
+                transparent: true,
+                opacity: 0.35,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
+            });
+            laserScanningPlane = new THREE.Mesh(planeGeo, planeMat);
+            laserScanningPlane.rotation.x = Math.PI / 2;
+            scene.add(laserScanningPlane);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambient);
+
+            setupGlobeInteractions();
+
+            animateThreeJS();
+        }
+
+        let planeDir = 1;
+        let planeY = 0;
+        let planeSpeed = 0.035;
+
+        function animateThreeJS() {
+            requestAnimationFrame(animateThreeJS);
+
+            // Rotate core grid globe (apply inertia / momentum decay)
+            if (cyberGlobe) {
+                if (isDragging) {
+                    // controlled by user dragging
+                } else {
+                    // Apply velocity decay
+                    cyberGlobe.rotation.y += dragVelocity.x;
+                    cyberGlobe.rotation.x += dragVelocity.y;
+                    dragVelocity.x *= 0.95;
+                    dragVelocity.y *= 0.95;
+
+                    // Fallback to auto rotation once velocity drops
+                    if (Math.abs(dragVelocity.x) < 0.001 && Math.abs(dragVelocity.y) < 0.001) {
+                        cyberGlobe.rotation.y += currentRotationSpeed;
+                        cyberGlobe.rotation.x += currentRotationSpeed * 0.15;
+                    }
+                }
+            }
+            if (outerGlobePoints) {
+                outerGlobePoints.rotation.y -= currentRotationSpeed * 0.45;
+            }
+
+            // Animate scanning plane (accelerated during scan vectors)
+            if (laserScanningPlane) {
+                planeY += planeSpeed * planeDir;
+                if (planeY > 2.2) {
+                    planeY = 2.2;
+                    planeDir = -1;
+                } else if (planeY < -2.2) {
+                    planeY = -2.2;
+                    planeDir = 1;
+                }
+                laserScanningPlane.position.y = planeY;
+            }
+
+            // Animate laser comet flying along connection bezier arc
+            if (activeComet && cometCurve) {
+                cometProgress += 0.012;
+                if (cometProgress > 1.0) {
+                    cometProgress = 0;
+                }
+                const pos = cometCurve.getPointAt(cometProgress);
+                activeComet.position.copy(pos);
+            }
+
+            // Pulse radar beacons
+            activeBeacons.forEach(b => {
+                b.scale += 0.025;
+                if (b.scale > b.maxScale) {
+                    b.scale = 1.0;
+                }
+                b.ring.scale.set(b.scale, b.scale, 1);
+                b.ring.material.opacity = 1.0 - (b.scale - 1.0) / (b.maxScale - 1.0);
+            });
+
+            // Interpolate rotation speed
+            if (currentRotationSpeed > baseRotationSpeed) {
+                currentRotationSpeed -= 0.0015;
+            } else if (currentRotationSpeed < baseRotationSpeed) {
+                currentRotationSpeed = baseRotationSpeed;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            if (!threeContainer || !renderer || !camera) return;
+            const w = threeContainer.clientWidth;
+            const h = threeContainer.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        });
+
+        // Setup Globe Drag and Scroll interactions
+        function setupGlobeInteractions() {
+            const container = document.getElementById("three-container");
+            if (!container) return;
+
+            // Mouse events
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+                dragVelocity = { x: 0, y: 0 };
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isDragging || !cyberGlobe) return;
+
+                const deltaMove = {
+                    x: e.clientX - previousMousePosition.x,
+                    y: e.clientY - previousMousePosition.y
+                };
+
+                // Track momentum
+                dragVelocity.x = deltaMove.x * 0.005;
+                dragVelocity.y = deltaMove.y * 0.005;
+
+                cyberGlobe.rotation.y += dragVelocity.x;
+                cyberGlobe.rotation.x += dragVelocity.y;
+
+                previousMousePosition = {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Touch events for mobile
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY
+                    };
+                    dragVelocity = { x: 0, y: 0 };
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging || !cyberGlobe || e.touches.length !== 1) return;
+
+                const deltaMove = {
+                    x: e.touches[0].clientX - previousMousePosition.x,
+                    y: e.touches[0].clientY - previousMousePosition.y
+                };
+
+                // Track momentum
+                dragVelocity.x = deltaMove.x * 0.005;
+                dragVelocity.y = deltaMove.y * 0.005;
+
+                cyberGlobe.rotation.y += dragVelocity.x;
+                cyberGlobe.rotation.x += dragVelocity.y;
+
+                previousMousePosition = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+            }, { passive: true });
+
+            container.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            // Scroll zoom
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (!camera) return;
+
+                let targetZ = camera.position.z + (e.deltaY * 0.005);
+                targetZ = Math.max(3.5, Math.min(12, targetZ));
+
+                camera.position.z = targetZ;
+            }, { passive: false });
+        }
+
+        // HUD Zoom HUD buttons logic
+        function zoomThree(dir) {
+            if (!camera) return;
+            let targetZ = camera.position.z - (dir * 0.8);
+            targetZ = Math.max(3.5, Math.min(12, targetZ));
+
+            gsap.to(camera.position, {
+                z: targetZ,
+                duration: 0.3,
+                ease: "power2.out"
+            });
+        }
+
+        setTimeout(initThreeJS, 100);
+
+        function updateCoreColor(hexColor) {
+            targetCoreColor = hexColor;
+            const duration = 0.8;
+
+            gsap.to(outerGlobePoints.material.color, {
+                r: ((hexColor >> 16) & 255) / 255,
+                g: ((hexColor >> 8) & 255) / 255,
+                b: (hexColor & 255) / 255,
+                duration: duration
+            });
+            gsap.to(laserScanningPlane.material.color, {
+                r: ((hexColor >> 16) & 255) / 255,
+                g: ((hexColor >> 8) & 255) / 255,
+                b: (hexColor & 255) / 255,
+                duration: duration
+            });
+
+            cyberGlobe.children.forEach(child => {
+                if (child.name === "earthBase") return; // Keep realistic Earth coloring
+                if (child.material && child.material.color) {
+                    gsap.to(child.material.color, {
+                        r: ((hexColor >> 16) & 255) / 255,
+                        g: ((hexColor >> 8) & 255) / 255,
+                        b: (hexColor & 255) / 255,
+                        duration: duration
+                    });
+                }
+            });
+        }
+
+
+        /* =================================================================
+           4. SCANNING LOGIC (AJAX & SIMULATED TERMINAL PROCESS)
+        ==================================================================== */
+        const logConsole = document.getElementById("logConsole");
+        const reportPanel = document.getElementById("reportPanel");
+        const reportCard = document.getElementById("reportCard");
+        const reportHeadline = document.getElementById("reportHeadline");
+        const reasonsList = document.getElementById("reasonsList");
+        const targetUrlInput = document.getElementById("targetUrlInput");
+        const submitBtn = document.getElementById("submitBtn");
+
+        // User Geolocation States (default to Bangalore coordinates)
+        let userLocation = {
+            lat: 12.9716,
+            lon: 77.5946,
+            city: "Bangalore Node",
+            country: "India"
+        };
+
+        // Cache for the active scan state (used for dossier download)
+        let lastScanData = null;
+
+        // Auto Scan query parameter checker
+        function checkAutoScan() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const scanUrl = urlParams.get('scan');
+            if (scanUrl) {
+                targetUrlInput.value = decodeURIComponent(scanUrl);
+                addConsoleLog(`INBOUND DEEP SCAN LINK INITIATED: ${targetUrlInput.value}`, "info");
+                setTimeout(() => {
+                    executeUrlScan();
+                }, 1000);
+            }
+        }
+
+        // Great-Circle distance formula (Haversine)
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of Earth in kilometers
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // High-tech dossier report generator and exporter supporting multiple formats (TXT & PDF)
+        function exportDossier(format) {
+            if (!lastScanData) {
+                alert("No active scan report to export.");
+                return;
+            }
+
+            const d = lastScanData;
+
+            let threatSigma = "0.00 (NOMINAL)";
+            let riskPercent = "0";
+            let themeColor = "#00ff88"; // default Safe Green
+            let themeGlow = "rgba(0, 255, 136, 0.4)";
+
+            if (d.result.includes("Safe")) {
+                threatSigma = "0.00 (NOMINAL)";
+                riskPercent = "0";
+                themeColor = "#00ff88";
+                themeGlow = "rgba(0, 255, 136, 0.4)";
+            } else if (d.result.includes("Suspicious")) {
+                threatSigma = "0.50 (WARN)";
+                riskPercent = "50";
+                themeColor = "#ffaa00"; // Warn Amber
+                themeGlow = "rgba(255, 170, 0, 0.4)";
+            } else {
+                threatSigma = "1.00 (ALERT)";
+                riskPercent = "99";
+                themeColor = "#ff003c"; // Danger Red
+                themeGlow = "rgba(255, 0, 60, 0.4)";
+            }
+
+            let domainName = d.url.replace("https://", "").replace("http://", "").split("/")[0].split(":")[0];
+            domainName = domainName.replace(/[^a-zA-Z0-9]/g, "_");
+
+            if (format === 'txt') {
+                const reasonsText = d.reasons.length > 0
+                    ? d.reasons.map(r => `  - [WARNING] ${r}`).join('\n')
+                    : "  - No anomalies detected. Protocol integrity verified.";
+
+                const fileContent = `+-----------------------------------------------------------+
+|               NYX CYBER-RADAR PROTOCOL SYSTEM             |
+|              CLASSIFIED INCIDENT REPORT DOSSIER           |
++-----------------------------------------------------------+
+| SECURITY LEVEL: CLASSIFIED // INTERNAL USE ONLY           |
+| GENERATED AT  : ${d.timestamp} UTC                       |
++-----------------------------------------------------------+
+
+[1] TARGET ACQUISITION DATA
+---------------------------
+* URL TARGET       : ${d.url}
+* RESOLVED IP      : ${d.target_geo.ip || "0.0.0.0"}
+* TARGET PROVIDER  : ${d.target_geo.org || "Unknown"}
+* TARGET LOCATION  : ${d.target_geo.city || "Unknown"}, ${d.target_geo.country || "Unknown"}
+* TARGET GEOLOC    : LAT: ${d.target_geo.lat || 0.0}, LON: ${d.target_geo.lon || 0.0}
+
+[2] LOCAL AGENCY NODE DATA
+--------------------------
+* AGENT NODE SOURCE: ${userLocation.city}, ${userLocation.country}
+* SOURCE GEOLOC    : LAT: ${userLocation.lat.toFixed(4)}, LON: ${userLocation.lon.toFixed(4)}
+
+[3] TELEMETRY PROPAGATION
+-------------------------
+* SIGNAL DISTANCE  : ${d.distance.toFixed(2)} KM
+* NETWORK LATENCY  : ${d.delay} MS
+* TELEMETRY STATUS : SECURE NODE ESTABLISHED
+
+[4] HEURISTIC EVALUATION
+------------------------
+* OVERALL RESULT   : ${d.result.toUpperCase()}
+* THREAT SCORE     : ${threatSigma}
+* RISK PERCENTAGE  : ${riskPercent}%
+
+* DETECTED RISK VECTORS:
+${reasonsText}
+
++-----------------------------------------------------------+
+|          END OF DOSSIER // SECURE CONNECTIVITY LOGS       |
+|            NYX SECURITY INTELLIGENCE SERVICE              |
++-----------------------------------------------------------+`;
+
+                const blob = new Blob([fileContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.download = `nyx_dossier_${domainName}.txt`;
+                a.href = url;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                addConsoleLog("CLASSIFIED DOSSIER REPORT EXPORTED TO DISK (PLAIN TXT).", "success");
+                playCyberSound('success');
+
+            } else if (format === 'pdf') {
+                // Construct a temporary DOM container styled precisely like the NYX website theme
+                const element = document.createElement('div');
+                element.style.padding = '40px';
+                element.style.background = '#0b0203';
+                element.style.color = '#e5c5c8';
+                element.style.fontFamily = "'Share Tech Mono', monospace";
+                element.style.width = '750px';
+                element.style.border = `2px solid ${themeColor}`;
+                element.style.borderRadius = '4px';
+                element.style.backgroundImage = 'radial-gradient(circle at center, #230408 0%, #0b0203 100%)';
+                element.style.position = 'relative';
+
+                element.innerHTML = `
+                    <!-- Corner Brackets -->
+                    <div style="position: absolute; top: -2px; left: -2px; width: 15px; height: 15px; border-color: ${themeColor}; border-style: solid; border-width: 3px 0 0 3px;"></div>
+                    <div style="position: absolute; top: -2px; right: -2px; width: 15px; height: 15px; border-color: ${themeColor}; border-style: solid; border-width: 3px 3px 0 0;"></div>
+                    <div style="position: absolute; bottom: -2px; left: -2px; width: 15px; height: 15px; border-color: ${themeColor}; border-style: solid; border-width: 0 0 3px 3px;"></div>
+                    <div style="position: absolute; bottom: -2px; right: -2px; width: 15px; height: 15px; border-color: ${themeColor}; border-style: solid; border-width: 0 4px 4px 0;"></div>
+
+                    <!-- Scanline & grid-overlay visual decorations (simulated) -->
+                    <div style="border: 1px solid rgba(255, 255, 255, 0.05); padding: 25px; background: rgba(18, 4, 6, 0.55); backdrop-filter: blur(5px);">
+                        
+                        <!-- Header -->
+                        <div style="text-align: center; border-bottom: 2px solid ${themeColor}; padding-bottom: 20px; margin-bottom: 30px; position: relative;">
+                            <h1 style="font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #fff; margin: 0; letter-spacing: 3px; text-shadow: 0 0 10px ${themeGlow}; font-weight: 900;">NYX CYBER-RADAR</h1>
+                            <p style="font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: ${themeColor}; letter-spacing: 2px; margin: 8px 0 0 0; text-transform: uppercase; font-weight: bold;">CLASSIFIED INCIDENT REPORT DOSSIER</p>
+                        </div>
+
+                        <!-- Info Header Details -->
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 35px; font-size: 0.9rem;">
+                            <tr>
+                                <td style="width: 40%; color: ${themeColor}; font-weight: bold; padding: 4px 0;">SECURITY DIVISION:</td>
+                                <td style="color: #fff; text-transform: uppercase;">LEVEL 3 // CLASSIFIED OPERATIONS</td>
+                            </tr>
+                            <tr>
+                                <td style="color: ${themeColor}; font-weight: bold; padding: 4px 0;">GENERATED TIMESTAMP:</td>
+                                <td style="color: #fff;">${d.timestamp} UTC</td>
+                            </tr>
+                            <tr>
+                                <td style="color: ${themeColor}; font-weight: bold; padding: 4px 0;">TELEMETRY LINK STATUS:</td>
+                                <td style="color: #00ff88; font-weight: bold;">ACTIVE AND ENCRYPTED</td>
+                            </tr>
+                        </table>
+
+                        <!-- Section 1: Target Acquisition -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="font-family: 'Orbitron', sans-serif; color: ${themeColor}; border-bottom: 1px dashed ${themeColor}; padding-bottom: 6px; margin-bottom: 15px; font-size: 1.05rem; letter-spacing: 1px;">[01] TARGET ACQUISITION DATA</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; line-height: 1.6;">
+                                <tr><td style="width: 35%; color: rgba(229, 197, 200, 0.65);">Target URL Address:</td><td style="color: #fff; font-weight: bold; word-break: break-all;">${d.url}</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.65);">Resolved Host IP:</td><td style="color: #fff;">${d.target_geo.ip || "0.0.0.0"}</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.65);">Resolved Organization/ISP:</td><td style="color: #fff;">${d.target_geo.org || "Unknown"}</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.65);">Resolved Node City/Region:</td><td style="color: #fff;">${d.target_geo.city || "Unknown"}, ${d.target_geo.country || "Unknown"}</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.65);">Target Coordinates:</td><td style="color: #fff;">Latitude: ${d.target_geo.lat || 0.0} / Longitude: ${d.target_geo.lon || 0.0}</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Section 2: Local Agency Node -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="font-family: 'Orbitron', sans-serif; color: ${themeColor}; border-bottom: 1px dashed ${themeColor}; padding-bottom: 6px; margin-bottom: 15px; font-size: 1.05rem; letter-spacing: 1px;">[02] LOCAL AGENCY NODE DATA</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; line-height: 1.6;">
+                                <tr><td style="width: 35%; color: rgba(229, 197, 200, 0.65);">Agent Grid Location:</td><td style="color: #fff;">${userLocation.city}, ${userLocation.country}</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.65);">Agent Coordinates:</td><td style="color: #fff;">Latitude: ${userLocation.lat.toFixed(4)} / Longitude: ${userLocation.lon.toFixed(4)}</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Section 3: Telemetry Propagation -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="font-family: 'Orbitron', sans-serif; color: ${themeColor}; border-bottom: 1px dashed ${themeColor}; padding-bottom: 6px; margin-bottom: 15px; font-size: 1.05rem; letter-spacing: 1px;">[03] PROPAGATION TELEMETRY</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; line-height: 1.6;">
+                                <tr><td style="width: 35%; color: rgba(229, 197, 200, 0.65);">Physical Signal Separation:</td><td style="color: #fff; font-weight: bold;">${d.distance.toFixed(2)} KM</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.65);">Estimated Propagation Latency:</td><td style="color: #fff; font-weight: bold;">${d.delay} MS</td></tr>
+                            </table>
+                        </div>
+
+                        <!-- Section 4: Heuristic Threat Rating -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="font-family: 'Orbitron', sans-serif; color: ${themeColor}; border-bottom: 1px dashed ${themeColor}; padding-bottom: 6px; margin-bottom: 15px; font-size: 1.05rem; letter-spacing: 1px;">[04] HEURISTIC SYSTEM VERDICT</h3>
+                            <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid ${themeColor}; border-radius: 4px; padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; margin-bottom: 15px;">
+                                    <span style="font-family: 'Orbitron', sans-serif; font-size: 1.15rem; font-weight: 900; color: ${themeColor}; text-shadow: 0 0 8px ${themeGlow};">${d.result.toUpperCase()}</span>
+                                    <span style="font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #fff;">THREAT SIGMA: ${threatSigma}</span>
+                                </div>
+                                <div style="font-size: 0.9rem; color: rgba(229, 197, 200, 0.95); display: flex; flex-direction: column; gap: 8px;">
+                                    ${d.reasons.length > 0
+                        ? d.reasons.map(r => `<div style="display: flex; gap: 8px; align-items: flex-start;"><span style="color: ${themeColor};">&bull;</span><span>${r}</span></div>`).join('')
+                        : `<div style="display: flex; gap: 8px; align-items: flex-start;"><span style="color: ${themeColor};">&bull;</span><span>No suspicious vectors detected. Signature match is within nominal operating values.</span></div>`}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Security Integrity Audit -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="font-family: 'Orbitron', sans-serif; color: ${themeColor}; border-bottom: 1px dashed ${themeColor}; padding-bottom: 6px; margin-bottom: 15px; font-size: 1.05rem; letter-spacing: 1px;">[05] SECURITY INTEGRITY & POLICIES</h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; line-height: 1.6;">
+                                <tr>
+                                    <td style="width: 35%; color: rgba(229, 197, 200, 0.65); padding: 4px 0;">SSL Certificate Status:</td>
+                                    <td style="color: ${d.ssl_telemetry && d.ssl_telemetry.active ? '#00ff88' : '#ff003c'}; font-weight: bold; padding: 4px 0;">
+                                        ${d.ssl_telemetry && d.ssl_telemetry.active ? 'ACTIVE' : 'INACTIVE'}
+                                    </td>
+                                </tr>
+                                ${d.ssl_telemetry && d.ssl_telemetry.active ? `
+                                <tr><td style="color: rgba(229, 197, 200, 0.5); padding: 2px 0 2px 20px;">SSL Issuer:</td><td style="color: #fff; padding: 2px 0;">${d.ssl_telemetry.issuer}</td></tr>
+                                <tr><td style="color: rgba(229, 197, 200, 0.5); padding: 2px 0 2px 20px;">SSL Expiry:</td><td style="color: #fff; padding: 2px 0;">${d.ssl_telemetry.expiry}</td></tr>
+                                ` : ''}
+                                <tr>
+                                    <td style="color: rgba(229, 197, 200, 0.65); padding: 4px 0;">HSTS Policy defense:</td>
+                                    <td style="color: ${d.headers_telemetry && d.headers_telemetry.hsts ? '#00ff88' : '#ffaa00'}; font-weight: bold; padding: 4px 0;">
+                                        ${d.headers_telemetry && d.headers_telemetry.hsts ? 'ENABLED' : 'MISSING'}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color: rgba(229, 197, 200, 0.65); padding: 4px 0;">CSP Policy defense:</td>
+                                    <td style="color: ${d.headers_telemetry && d.headers_telemetry.csp ? '#00ff88' : '#ffaa00'}; font-weight: bold; padding: 4px 0;">
+                                        ${d.headers_telemetry && d.headers_telemetry.csp ? 'ENABLED' : 'MISSING'}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color: rgba(229, 197, 200, 0.65); padding: 4px 0;">Domain Registration Date:</td>
+                                    <td style="color: #fff; font-weight: bold; padding: 4px 0;">
+                                        ${d.whois_telemetry && d.whois_telemetry.creation_date !== 'Unknown' ? `${d.whois_telemetry.creation_date} (Age: ${d.whois_telemetry.domain_age_days} Days)` : 'UNRESOLVED'}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px; margin-top: 50px; font-size: 0.75rem; color: rgba(229, 197, 200, 0.35); text-transform: uppercase; letter-spacing: 1px; font-family: 'Orbitron', sans-serif;">
+                            // END OF DOSSIER // REPORT SIGMA INTEGRITY VERIFIED // NYX INTEL INC.
+                        </div>
+                    </div>
+                `;
+
+                // Set up options for html2pdf
+                const opt = {
+                    margin: 10,
+                    filename: `nyx_dossier_${domainName}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0b0203' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                addConsoleLog("COMPILING THEMED PDF DOSSIER REPORT...", "info");
+
+                // Run html2pdf download
+                html2pdf().set(opt).from(element).save().then(() => {
+                    addConsoleLog("CLASSIFIED DOSSIER REPORT EXPORTED TO DISK (THEMED PDF).", "success");
+                    playCyberSound('success');
+                }).catch(err => {
+                    addConsoleLog(`PDF EXPORT ERROR: ${err.message}`, "error");
+                });
+            }
+        }
+
+        // Secure Session History database handlers
+        function loadHistory() {
+            const historyList = document.getElementById("historyList");
+            if (!historyList) return;
+
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem("nyx_scan_history")) || [];
+            } catch (e) {
+                history = [];
+            }
+
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div style="color: rgba(229, 197, 200, 0.4); text-align: center; padding: 15px 0; font-style: italic;">
+                        No recorded sessions in registry.
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = "";
+            history.forEach(item => {
+                let borderCol = "rgba(0, 255, 136, 0.2)";
+                let textCol = "var(--safe-color)";
+                if (item.result.includes("Suspicious")) {
+                    borderCol = "rgba(255, 170, 0, 0.2)";
+                    textCol = "var(--warn-color)";
+                } else if (item.result.includes("Dangerous") || item.result.includes("Likely")) {
+                    borderCol = "rgba(255, 0, 60, 0.2)";
+                    textCol = "var(--primary-color)";
+                }
+
+                const entry = document.createElement("div");
+                entry.className = "history-entry";
+                entry.style.borderColor = borderCol;
+                entry.onclick = () => reScanUrl(item.url);
+
+                entry.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 2px; text-align: left; flex-grow: 1; overflow: hidden;">
+                        <span style="font-weight: bold; color: #fff; font-size: 0.85rem; word-break: break-all; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">${item.url}</span>
+                        <span style="font-size: 0.75rem; color: rgba(229, 197, 200, 0.6);">${item.timestamp} &bull; ${item.distance.toFixed(1)} KM</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                        <span style="font-size: 0.7rem; font-weight: bold; color: ${textCol}; border: 1px solid ${textCol}; padding: 2px 6px; border-radius: 2px; text-transform: uppercase;">${item.result.includes("Safe") ? "SAFE" : (item.result.includes("Suspicious") ? "WARN" : "ALERT")}</span>
+                        <i class="fa-solid fa-crosshairs" style="color: var(--primary-color); font-size: 0.95rem;"></i>
+                    </div>
+                `;
+                historyList.appendChild(entry);
+            });
+        }
+
+        function saveToHistory(url, result, distance) {
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem("nyx_scan_history")) || [];
+            } catch (e) {
+                history = [];
+            }
+
+            history = history.filter(item => item.url !== url);
+
+            const time = new Date();
+            const h = String(time.getHours()).padStart(2, '0');
+            const m = String(time.getMinutes()).padStart(2, '0');
+            const s = String(time.getSeconds()).padStart(2, '0');
+            const timestamp = `${h}:${m}:${s}`;
+
+            history.unshift({
+                url: url,
+                result: result,
+                distance: distance,
+                timestamp: timestamp
+            });
+
+            if (history.length > 5) {
+                history.pop();
+            }
+
+            try {
+                localStorage.setItem("nyx_scan_history", JSON.stringify(history));
+            } catch (e) { }
+
+            loadHistory();
+        }
+
+        function reScanUrl(url) {
+            targetUrlInput.value = url;
+            executeUrlScan();
+        }
+
+        // High-tech sound effects generator
+        function playCyberSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'beep') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } else if (type === 'scan') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                } else if (type === 'warning') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                } else if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                }
+            } catch (e) { }
+        }
+
+        function speakCyberVoice(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.volume = 0.45;
+                utterance.rate = 1.05;
+                utterance.pitch = 0.85;
+                const voices = window.speechSynthesis.getVoices();
+                const roboticVoice = voices.find(v => v.lang.includes('en') && v.name.includes('Google'));
+                if (roboticVoice) utterance.voice = roboticVoice;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function requestUserLocation() {
+            addConsoleLog("ESTABLISHING GRID SECURE NODE LOCALIZATION...", "info");
+            addConsoleLog("REQUESTING BROWSER GEOLOCATION PERMISSION...", "info");
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation.lat = position.coords.latitude;
+                        userLocation.lon = position.coords.longitude;
+                        userLocation.city = "USER_NODE_LOC";
+                        userLocation.country = "LOCAL_DEVICE";
+                        addConsoleLog(`GEOLOCATION GRANTED: COORDS RESOLVED TO [${userLocation.lat.toFixed(4)}, ${userLocation.lon.toFixed(4)}]`, "success");
+                        speakCyberVoice("Localization node acquired.");
+                    },
+                    (error) => {
+                        let errMsg = "Unknown Error";
+                        if (error.code === error.PERMISSION_DENIED) {
+                            errMsg = "Access Denied by User";
+                        } else if (error.code === error.POSITION_UNAVAILABLE) {
+                            errMsg = "Position Coordinates Unavailable";
+                        } else if (error.code === error.TIMEOUT) {
+                            errMsg = "Request Timed Out";
+                        }
+                        addConsoleLog(`GEOLOCATION REJECTED: ${errMsg}. Defaulting to Bangalore Node.`, "warning");
+                        speakCyberVoice("Localization denied. Accessing default node.");
+                    },
+                    { timeout: 8000 }
+                );
+            } else {
+                addConsoleLog("GEOLOCATION API UNSUPPORTED BY AGENT. Defaulting to Bangalore Node.", "warning");
+            }
+        }
+
+        // HUD indicators
+        const hudCoreState = document.getElementById("hudCoreState");
+        const hudGridIntensity = document.getElementById("hudGridIntensity");
+        const hudRotationSpeed = document.getElementById("hudRotationSpeed");
+        const hudThreatSigma = document.getElementById("hudThreatSigma");
+
+        function getTimestamp() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            return `[${h}:${m}:${s}]`;
+        }
+
+        function addConsoleLog(text, type = "info") {
+            const entry = document.createElement("div");
+            entry.className = "log-entry";
+
+            const timeSpan = document.createElement("span");
+            timeSpan.className = "log-time";
+            timeSpan.textContent = getTimestamp();
+            entry.appendChild(timeSpan);
+
+            const textSpan = document.createElement("span");
+            textSpan.className = "log-text";
+
+            if (type === "success") textSpan.className += " log-success";
+            if (type === "warning") textSpan.className += " log-warning";
+            if (type === "error") textSpan.className += " log-error";
+
+            textSpan.textContent = text;
+            entry.appendChild(textSpan);
+
+            logConsole.appendChild(entry);
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+
+        let activeTimeouts = [];
+
+        function clearAllTimeouts() {
+            activeTimeouts.forEach(t => clearTimeout(t));
+            activeTimeouts = [];
+        }
+
+        async function executeUrlScan(event) {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            const url = targetUrlInput.value.trim();
+            if (!url) return;
+
+            // Clear any currently running scan timeouts
+            clearAllTimeouts();
+
+            // 1. UI Resets and Lockdowns
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SCANNING GRID VECTOR...`;
+
+            // Hide report panel if visible
+            gsap.to(reportPanel, {
+                duration: 0.3,
+                scale: 0.95,
+                opacity: 0,
+                onComplete: () => {
+                    reportPanel.style.display = "none";
+                }
+            });
+
+            // 2. Accelerate 3D Cyber Core & Pulse white
+            currentRotationSpeed = 0.09;
+            planeSpeed = 0.12; // speed up scan beam
+            updateCoreColor(0xffffff); // Burst white
+
+            playCyberSound('scan');
+            speakCyberVoice('Initiating threat signature sweep.');
+
+            // Clean old attack arcs
+            clearScanBeacons();
+
+            document.getElementById("hudTargetLocation").textContent = "SCANNING...";
+            document.getElementById("hudTargetIp").textContent = "LOOKING UP...";
+            document.getElementById("hudTargetOrg").textContent = "QUERYING...";
+
+            // 3. Clear logs and print dynamic hacker scanning sequence
+            logConsole.innerHTML = "";
+            addConsoleLog(`ACQUIRING TARGET VECTOR: ${url}`, "info");
+
+            const scanSteps = [
+                { delay: 400, text: "OPENING SOCKET CONNECTIVITY FOR DNS QUERY...", type: "info" },
+                { delay: 850, text: "EXTRACTING PROTOCOL SCHEME SIGNATURES...", type: "info" },
+                { delay: 1300, text: "EVALUATING DOMAIN ENTROPY AND STRING SEGMENTATION...", type: "info" },
+                { delay: 1800, text: "RUNNING HEURISTICS INTEGRITY CHECKS AGAINST KNOWN REPOS...", type: "info" }
+            ];
+
+            // Run simulated steps visual typing
+            scanSteps.forEach(step => {
+                const t = setTimeout(() => {
+                    addConsoleLog(step.text, step.type);
+                }, step.delay);
+                activeTimeouts.push(t);
+            });
+
+            // 4. Execute asynchronous API query to flask backend
+            try {
+                const response = await fetch("/api/scan", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Target connection error.");
+                }
+
+                const data = await response.json();
+
+                // Stagger response resolution to align with visual logs
+                const tRes = setTimeout(() => {
+                    resolveScanResults(data);
+                }, 2200);
+                activeTimeouts.push(tRes);
+
+            } catch (err) {
+                const tErr = setTimeout(() => {
+                    addConsoleLog(`SCAN SYSTEM ERROR: ${err.message}`, "error");
+                    updateCoreColor(0xff003c);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i class="fa-solid fa-crosshairs"></i> SCAN TARGET ENDPOINT`;
+                    document.getElementById("hudTargetLocation").textContent = "ERROR";
+                    document.getElementById("hudTargetIp").textContent = "0.0.0.0";
+                    document.getElementById("hudTargetOrg").textContent = "ABORTED";
+                }, 2200);
+                activeTimeouts.push(tErr);
+            }
+        }
+
+        function resolveScanResults(data) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fa-solid fa-crosshairs"></i> SCAN TARGET ENDPOINT`;
+
+            planeSpeed = 0.035; // slow down scan beam back to base speed
+
+            const result = data.result;
+            const reasons = data.reasons;
+            const client_geo = data.client_geo;
+            const target_geo = data.target_geo;
+
+            // Clear previous cards
+            reportCard.className = "report-card";
+            reportHeadline.innerHTML = "";
+            reasonsList.innerHTML = "";
+
+            let colorHex = 0xff003c;
+            let statusText = "DANGEROUS";
+
+            // Format Report Card based on response
+            if (result.includes("Safe")) {
+                colorHex = 0x00ff88; // Cyber Green
+                statusText = "SECURE // CLEAR";
+
+                reportCard.classList.add("report-card-safe");
+                reportHeadline.innerHTML = `
+                    <span class="headline-safe"><i class="fa-solid fa-shield-halved"></i> SECURE VECTOR</span>
+                    <span class="headline-safe" style="font-size: 0.8rem;">RISK LEVEL: 0%</span>
+                `;
+
+                addConsoleLog("GRID SCAN COMPLETE: NO THREATS IDENTIFIED.", "success");
+                playCyberSound('success');
+                speakCyberVoice('Scan complete. Endpoint verified secure.');
+                hudThreatSigma.textContent = "0.00 (NOMINAL)";
+                hudThreatSigma.style.color = "var(--safe-color)";
+
+                const li = document.createElement("li");
+                li.className = "li-safe";
+                li.innerHTML = `<i class="fa-solid fa-circle-check"></i> URL protocol checks clear. Integrity rating stable.`;
+                reasonsList.appendChild(li);
+
+            } else if (result.includes("Suspicious")) {
+                colorHex = 0xffaa00; // Warning Amber
+                statusText = "SUSPICIOUS";
+
+                reportCard.classList.add("report-card-warn");
+                reportHeadline.innerHTML = `
+                    <span class="headline-warn"><i class="fa-solid fa-circle-exclamation"></i> WARNING INTRUSION</span>
+                    <span class="headline-warn" style="font-size: 0.8rem;">RISK LEVEL: 50%</span>
+                `;
+
+                addConsoleLog("GRID SCAN WARNING: HOST SIGMA EXCEEDS SAFETY LIMITS.", "warning");
+                playCyberSound('warning');
+                speakCyberVoice('Warning. Suspicious heuristics detected.');
+                hudThreatSigma.textContent = "0.50 (WARN)";
+                hudThreatSigma.style.color = "var(--warn-color)";
+
+                if (reasons.length > 0) {
+                    reasons.forEach(reason => {
+                        const li = document.createElement("li");
+                        li.className = "li-warn";
+                        li.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${reason}`;
+                        reasonsList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement("li");
+                    li.className = "li-warn";
+                    li.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Unverified SSL headers or suspicious hostname length.`;
+                    reasonsList.appendChild(li);
+                }
+
+            } else { // Dangerous / Phishing
+                colorHex = 0xff003c; // Red Alert
+                statusText = "DANGEROUS // BLOCKED";
+
+                reportCard.classList.add("report-card-danger");
+                reportHeadline.innerHTML = `
+                    <span class="headline-danger"><i class="fa-solid fa-radiation"></i> THREAT IDENTIFIED</span>
+                    <span class="headline-danger" style="font-size: 0.8rem;">RISK LEVEL: 99%</span>
+                `;
+
+                addConsoleLog("CRITICAL DETECTED: PHISHING VECTOR INTERCEPTED!", "error");
+                playCyberSound('warning');
+                speakCyberVoice('Critical alert. Phishing vector intercepted.');
+                hudThreatSigma.textContent = "1.00 (ALERT)";
+                hudThreatSigma.style.color = "var(--primary-color)";
+
+                reasons.forEach(reason => {
+                    const li = document.createElement("li");
+                    li.className = "li-danger";
+                    li.innerHTML = `<i class="fa-solid fa-skull-crossbones"></i> ${reason}`;
+                    reasonsList.appendChild(li);
+                });
+            }
+
+            // Calculate spatial distance & signal latency
+            let distance = 0;
+            let delay = 0;
+            if (target_geo.lat !== 0 || target_geo.lon !== 0) {
+                distance = calculateHaversineDistance(userLocation.lat, userLocation.lon, target_geo.lat, target_geo.lon);
+                delay = Math.round((distance * 0.015) + 8);
+            } else {
+                distance = 0;
+                delay = Math.round(1 + Math.random() * 3);
+            }
+
+            // Update SSL, HSTS, CSP, and Domain Age Telemetry
+            const sslState = document.getElementById("telemetrySslState");
+            const hstsState = document.getElementById("telemetryHstsState");
+            const cspState = document.getElementById("telemetryCspState");
+            const domainAge = document.getElementById("telemetryDomainAge");
+
+            // SSL Cert Analysis
+            if (data.ssl_telemetry && data.ssl_telemetry.active) {
+                sslState.textContent = "ACTIVE";
+                sslState.style.color = "var(--safe-color)";
+                addConsoleLog(`SSL CERTIFICATE DETECTED: ISSUED BY [${data.ssl_telemetry.issuer}]`, "success");
+            } else {
+                sslState.textContent = "INACTIVE";
+                sslState.style.color = "var(--primary-color)";
+                addConsoleLog("SECURITY ALARM: SSL CERTIFICATE NOT DETECTED!", "warning");
+            }
+
+            // HSTS Defense
+            if (data.headers_telemetry && data.headers_telemetry.hsts) {
+                hstsState.textContent = "ENABLED";
+                hstsState.style.color = "var(--safe-color)";
+                addConsoleLog("SECURITY HEADER AUDIT: HSTS DEFENSE VERIFIED.", "info");
+            } else {
+                hstsState.textContent = "MISSING";
+                hstsState.style.color = "var(--warn-color)";
+                addConsoleLog("SECURITY HEADER AUDIT WARNING: Strict-Transport-Security HEADER MISSING.", "warning");
+            }
+
+            // CSP Defense
+            if (data.headers_telemetry && data.headers_telemetry.csp) {
+                cspState.textContent = "ENABLED";
+                cspState.style.color = "var(--safe-color)";
+                addConsoleLog("SECURITY HEADER AUDIT: Content-Security-Policy DEFENSE VERIFIED.", "info");
+            } else {
+                cspState.textContent = "MISSING";
+                cspState.style.color = "var(--warn-color)";
+                addConsoleLog("SECURITY HEADER AUDIT WARNING: Content-Security-Policy HEADER MISSING.", "warning");
+            }
+
+            // Domain Age Heuristics
+            if (data.whois_telemetry) {
+                const w = data.whois_telemetry;
+                if (w.creation_date !== "Unknown") {
+                    domainAge.textContent = `${w.domain_age_days} DAYS (${w.creation_date})`;
+                    addConsoleLog(`WHOIS DOMAIN ANALYSIS: CREATION RECORD RESOLVED TO [${w.creation_date}] (AGE: ${w.domain_age_days} DAYS)`, "info");
+                    if (w.is_new) {
+                        domainAge.style.color = "var(--primary-color)";
+                        addConsoleLog("CRITICAL SECURITY WARN: DOMAIN REGISTRATION EXTREMELY NEW (UNDER 30 DAYS)!", "error");
+                    } else {
+                        domainAge.style.color = "#fff";
+                    }
+                } else {
+                    domainAge.textContent = "UNRESOLVED";
+                    domainAge.style.color = "var(--warn-color)";
+                    addConsoleLog("WHOIS REGISTRY WARNING: UNABLE TO RESOLVE CREATION DATE TIMESTAMPS.", "warning");
+                }
+            }
+
+            // Cache active scan details
+            lastScanData = {
+                url: data.url,
+                result: data.result,
+                reasons: data.reasons,
+                client_geo: data.client_geo,
+                target_geo: data.target_geo,
+                distance: distance,
+                delay: delay,
+                whois_telemetry: data.whois_telemetry,
+                ssl_telemetry: data.ssl_telemetry,
+                headers_telemetry: data.headers_telemetry,
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+            };
+
+            // Update HUD values
+            document.getElementById("hudTargetLocation").textContent = `${target_geo.city}, ${target_geo.country}`;
+            document.getElementById("hudTargetIp").textContent = target_geo.ip;
+            document.getElementById("hudTargetOrg").textContent = target_geo.org.substring(0, 16) + (target_geo.org.length > 16 ? "..." : "");
+            document.getElementById("hudNodeDistance").textContent = `${distance.toFixed(2)} KM`;
+            document.getElementById("hudTransmissionDelay").textContent = `${delay} MS`;
+
+            // Save to browser scan history log registry database
+            saveToHistory(data.url, data.result, distance);
+
+            // Draw Geolocation Attack Arc in 3D scene
+            if (target_geo.lat !== 0 || target_geo.lon !== 0) {
+                addConsoleLog(`GEO TRACE: [${userLocation.city}] -> [${target_geo.city}, ${target_geo.country}]`, "info");
+                addConsoleLog(`GEOGRAPHIC SPATIAL SEPARATION: ${distance.toFixed(2)} KM`, "info");
+                addConsoleLog(`ESTIMATED SIGNAL PROPAGATION DELAY: ${delay} MS`, "info");
+                drawAttackArc(userLocation.lat, userLocation.lon, target_geo.lat, target_geo.lon, colorHex);
+            } else {
+                addConsoleLog(`GEO TRACE FAILURE: LOCAL HOST OR PRIVATE NETWORK DETECTED.`, "warning");
+                addConsoleLog(`LOCAL LOOPBACK DELAY: ${delay} MS`, "info");
+            }
+
+            // Stop globe auto rotation to inspect coordinates
+            baseRotationSpeed = 0;
+
+            // Dynamic color shift on the 3D globe core
+            updateCoreColor(colorHex);
+
+            // Display Report Card with sliding-in glitch GSAP animation
+            reportPanel.style.display = "block";
+            gsap.fromTo(reportPanel,
+                { scale: 0.95, opacity: 0 },
+                { duration: 0.5, scale: 1, opacity: 1, ease: "back.out(1.4)" }
+            );
+        }
+
+        function clearConsole() {
+            // Restore globe auto rotation
+            baseRotationSpeed = 0.008;
+            currentRotationSpeed = 0.008;
+
+            planeSpeed = 0.035; // reset scan speed
+            playCyberSound('beep');
+            speakCyberVoice('System reset.');
+
+            // Clear input field
+            targetUrlInput.value = "";
+
+            // Abort active timers / scan simulations
+            clearAllTimeouts();
+
+            // Clear 3D scan arcs and beacons
+            clearScanBeacons();
+
+            // Reset HUD telemetry display
+            document.getElementById("hudTargetLocation").textContent = "STANDBY";
+            document.getElementById("hudTargetIp").textContent = "0.0.0.0";
+            document.getElementById("hudTargetOrg").textContent = "STANDBY";
+            document.getElementById("hudNodeDistance").textContent = "0.00 KM";
+            document.getElementById("hudTransmissionDelay").textContent = "0.00 MS";
+
+            // Reset target security integrity cards
+            document.getElementById("telemetrySslState").textContent = "STANDBY";
+            document.getElementById("telemetrySslState").style.color = "rgba(255,255,255,0.4)";
+            document.getElementById("telemetryHstsState").textContent = "STANDBY";
+            document.getElementById("telemetryHstsState").style.color = "rgba(255,255,255,0.4)";
+            document.getElementById("telemetryCspState").textContent = "STANDBY";
+            document.getElementById("telemetryCspState").style.color = "rgba(255,255,255,0.4)";
+            document.getElementById("telemetryDomainAge").textContent = "STANDBY";
+            document.getElementById("telemetryDomainAge").style.color = "#fff";
+
+            lastScanData = null;
+
+            // Reset threat score to nominal
+            hudThreatSigma.textContent = "0.00 (NOMINAL)";
+            hudThreatSigma.style.color = "var(--safe-color)";
+
+            // Restore globe base color to Red Alert theme
+            updateCoreColor(0xff003c);
+
+            // Restore submit button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fa-solid fa-crosshairs"></i> SCAN TARGET ENDPOINT`;
+
+            // Hide threat evaluation card
+            gsap.to(reportPanel, {
+                duration: 0.3,
+                scale: 0.95,
+                opacity: 0,
+                onComplete: () => {
+                    reportPanel.style.display = "none";
+                }
+            });
+
+            // Write clear notification to log screen
+            logConsole.innerHTML = `
+                <div class="log-entry">
+                    <span class="log-time">${getTimestamp()}</span>
+                    <span class="log-text">SYSTEM RESET. STANDBY FOR TARGET VECTOR INPUT.</span>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
