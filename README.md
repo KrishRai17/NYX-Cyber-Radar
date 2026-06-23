@@ -139,8 +139,8 @@ To design and develop a **web-based phishing detection and analysis system** tha
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/KrishRai17/YOUR-REPO-NAME.git
-cd YOUR-REPO-NAME
+git clone https://github.com/KrishRai17/NYX-Cyber-Radar.git
+cd NYX-Cyber-Radar
 ```
 
 ### 2. Install dependencies
