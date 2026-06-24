@@ -229,10 +229,10 @@ http://127.0.0.1:5000
 ## 🔗 Links
 
 * **GitHub Repository:**
-  https://github.com/KrishRai17/YOUR-REPO-NAME
+  https://github.com/KrishRai17/NYX-Cyber-Radar
 
 * **LinkedIn Post:**
-  (Add your LinkedIn post link)
+  
 
 ---
 
