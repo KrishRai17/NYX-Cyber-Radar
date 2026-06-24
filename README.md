@@ -95,6 +95,9 @@ To design and develop a **web-based phishing detection and analysis system** tha
 
 ---
 
+## Demo Preview
+![Demo](screenshots/demo.gif)
+
 ## 📸 Screenshots
 
 ### 🧠 NYX Dashboard Interface
